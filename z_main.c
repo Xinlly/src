@@ -143,7 +143,8 @@ int main(void) {
 		loop_ps2_car();		//处理小车电机摇杆控制
 		loop_monitor();   	//定时保存一些变量
 		//test();
-		runDemo();//AI_yanse_shibie();//AI_xunji_bizhang();				//循迹避障
+		if (flag_start)
+			runDemo();//AI_yanse_shibie();//AI_xunji_bizhang();				//循迹避障
 	}
 }
 
@@ -416,13 +417,24 @@ void loop_ps2_button(void) {
 void loop_ps2_car(void) {
 	static int car_left_abs, car_left, car_right_abs, car_right, car_left_bak, car_right_bak;
 
-	if (psx_buf[1] != PS2_LED_RED)return;
+	if (psx_buf[1] != PS2_LED_RED || !flag_start) return;
 
 	car_left = (127 - psx_buf[8]) * 8;
 	car_right = (127 - psx_buf[6]) * 8;
 
 	car_left_abs = abs_int(car_left);
 	car_right_abs = abs_int(car_right);
+
+	// if (car_left > 600) car_left = 600;
+	// else if (car_left < -600) car_left = -600;
+	// else if (car_left_abs < 200) car_left = 0;
+
+	// if (car_right > 600) car_left = 600;
+	// else if (car_right < -600) car_right = -600;
+	// else if (car_right_abs < 200) car_right = 0;
+
+	// if (0 == car_left && car_right != 0) car_left = (2 * (car_right > 0) - 1);
+	// if (0 == car_right && car_left != 0) car_right = (2 * (car_left > 0) - 1);
 
 	if (car_left > 600) {
 		car_left = 600;
@@ -449,8 +461,6 @@ void loop_ps2_car(void) {
 		else if (car_left < 0) car_right = -1;
 		else car_right = 0;
 	}
-
-
 
 	if (car_left != car_left_bak || car_right != car_right_bak) {
 		//uart1_send_str((u8*)"ps2:");
@@ -499,12 +509,21 @@ void parse_psx_buf(unsigned char* buf, unsigned char mode) {
 		temp2 = temp;
 		temp &= bak;
 		for (i = 0;i < 16;i++) {     //16个按键一次轮询
+			if (!flag_start && i != 11)
+				continue;
 			if ((1 << i) & temp) {
 			}
 			else {
 				if ((1 << i) & bak) {	//press 表示按键按下了
 					switch (i) {
-						case 8:
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+							flag_hand = 1;
+							beep_on_times(3, 100);
+							break;
+						case 8://SE
 							car_set(0, 0);
 							if (flag_xunji) {
 								flag_xunji = 0;
@@ -516,6 +535,29 @@ void parse_psx_buf(unsigned char* buf, unsigned char mode) {
 							}
 
 							break;
+						case 11://start
+							car_set(0, 0);
+							if (flag_start) {
+								flag_start = 0;
+								beep_on_times(2, 100);
+							}
+							else {
+								flag_start = 1;
+								beep_on_times(3, 100);
+							}
+							break;
+						case 12://up
+							carAct(carAct_for);
+							break;
+						case 13://right
+							carAct(carAct_rightR);
+							break;
+						case 14://down
+							carAct(carAct_aft);
+							break;
+						case 15://left
+							carAct(carAct_leftR);
+							break;
 
 						default:
 							break;
@@ -524,8 +566,21 @@ void parse_psx_buf(unsigned char* buf, unsigned char mode) {
 				}
 				else {//release 表示按键松开了
 					switch (i) {
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+							flag_hand = 0;
+							beep_on_times(2, 100);
+							break;
 						case 8:
 							// beep_on_times(2, 100);
+							break;
+						case 12://up
+						case 13://right
+						case 14://down
+						case 15://left
+							car_set(0, 0);
 							break;
 
 						default:

@@ -595,18 +595,21 @@ void AI_shengkong_xunji(void) {
 	}
 }
 
-void catchObject() {
-	parse_cmd("$DGT:1-8,1!"); //执行脱机存储动作组
-}
-
-void detectColor() {
+void detectColorAndCatch() {
 	YSSB_LED(1);
 	mdelay(800);
 	TCS34725_GetRawData(&color_rgbc);
-	if (color_rgbc.r > color_rgbc.g && color_rgbc.r > color_rgbc.b) {
-		catchObject();
-	}
 	YSSB_LED(0);
+	if (color_rgbc.r > color_rgbc.g && color_rgbc.r > color_rgbc.b) {
+		parse_cmd("$DGT:1-8,1!"); //执行脱机存储动作组
+	}
+	else if (color_rgbc.g > color_rgbc.r && color_rgbc.g > color_rgbc.b) {
+		parse_cmd("$DGT:9-16,1!"); //执行脱机存储动作组
+
+	}
+	else if (color_rgbc.b > color_rgbc.g && color_rgbc.b > color_rgbc.r) {
+		parse_cmd("$DGT:17-22,1!"); //执行脱机存储动作组
+	}
 }
 
 
@@ -617,33 +620,33 @@ void detectColor() {
 void carAct(int mode) {
 	static int speed = 600;
 	switch (mode) {
-		case carAcr_leftR:
+		case carAct_leftR:
 			car_set(-speed - 200, speed + 200);
-			stateAct_bak = carAcr_leftR;
+			stateAct_bak = carAct_leftR;
 			break;
-		case carAcr_left:
+		case carAct_left:
 			car_set(speed - 200, speed + 200);
-			stateAct_bak = carAcr_left;
+			stateAct_bak = carAct_left;
 			break;
-		case carAcr_for:
+		case carAct_for:
 			car_set(speed, speed);
-			stateAct_bak = carAcr_for;
+			stateAct_bak = carAct_for;
 			break;
-		case carAcr_right:
+		case carAct_right:
 			car_set(speed + 200, speed - 200);
-			stateAct_bak = carAcr_right;
+			stateAct_bak = carAct_right;
 			break;
-		case carAcr_rightR:
-			car_set(speed + 200, -speed - 200);
-			stateAct_bak = carAcr_rightR;
+		case carAct_rightR:
+			car_set(speed, -speed);
+			stateAct_bak = carAct_rightR;
 			break;
-		case carAcr_aft:
+		case carAct_aft:
 			car_set(-speed, -speed);
-			stateAct_bak = carAcr_aft;
+			stateAct_bak = carAct_aft;
 			break;
-		case carAcr_stop:
+		case carAct_stop:
 			car_set(0, 0);
-			stateAct_bak = carAcr_stop;
+			stateAct_bak = carAct_stop;
 			break;
 		default:
 			break;
@@ -656,7 +659,7 @@ void leftEdge() {
 	stateCar = (stateHw_bak * 4 + stateHw) * 5 + stateAct_bak;
 
 	if (stateHw == 2 || stateHw == 0) {
-		carAct(carAcr_leftR);
+		carAct(carAct_leftR);
 	}
 	else {
 		switch (stateCar) {
@@ -709,7 +712,7 @@ void leftEdge() {
 void runDemo() {
 	static u32 systick_ms_xunji = 0;
 	// static u8 flag_bizhangBeep = 1;
-	int adc_csb;
+	// int adc_csb;
 
 	//声控
 	// if (1 == sound()) {
@@ -720,9 +723,13 @@ void runDemo() {
 	if (group_do_ok && millis() - systick_ms_xunji > 30) {
 		systick_ms_xunji = millis();
 		// adc_csb = get_adc_csb_middle();//获取a0的ad值，计算出距离
-		TCS34725_GetRawData(&color_rgbc);//获取RGB
-		if (color_rgbc.c < 1) {
-			parse_cmd("$DGT:1-8,1!"); //执行脱机存储动作组
+		if (flag_hand) {
+			TCS34725_GetRawData(&color_rgbc);//获取RGB
+			if (color_rgbc.c < 1) {
+				car_set(0, 0);
+				detectColorAndCatch();
+			}
+			flag_hand = 0;
 		}
 		// else
 		// if (adc_csb < 20) {
@@ -752,7 +759,7 @@ void test() {
 		TCS34725_GetRawData(&color_rgbc);//获取RGB
 		if (color_rgbc.c < 1) {
 			car_set(0, 0);
-			parse_cmd("$DGT:1-8,1!"); //执行脱机存储动作组
+			detectColorAndCatch();
 		}
 		// if (adc_csb < 20) {
 		// 	if (flag_bizhangBeep) {

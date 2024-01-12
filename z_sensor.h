@@ -18,13 +18,13 @@
 #define hwStatus_black 2
 
 //小车动作
-#define carAcr_leftR 0
-#define carAcr_left 1
-#define carAcr_for 2
-#define carAcr_right 3
-#define carAcr_rightR 4
-#define carAcr_aft 5
-#define carAcr_stop 6
+#define carAct_leftR 0
+#define carAct_left 1
+#define carAct_for 2
+#define carAct_right 3
+#define carAct_rightR 4
+#define carAct_aft 5
+#define carAct_stop 6
 
 #define Trig(x) gpioB_pin_set(0, x);
 #define Echo() GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_2)
@@ -86,6 +86,7 @@ void AI_gensui_moshi(void);			//超声波跟随功能
 void AI_ziyou_bizhang(void);		//超声波自由避障
 void AI_xunji_dingju(void);			//循迹超声波夹取
 void AI_shengkong_xunji(void);		//声控循迹
+void carAct(int mode);
 void test(void);
 void runDemo(void);
 

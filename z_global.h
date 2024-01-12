@@ -6,7 +6,7 @@
 
 extern u8 AI_mode;
 extern u8 group_do_ok;
-extern u8 flag_xunji;
+extern u8 flag_xunji, flag_hand, flag_start;
 
 
 #define DJ_NUM 8
