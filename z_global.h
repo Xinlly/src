@@ -6,6 +6,7 @@
 
 extern u8 AI_mode;
 extern u8 group_do_ok;
+extern u8 flag_xunji;
 
 
 #define DJ_NUM 8
@@ -24,7 +25,7 @@ typedef struct {
 	u32 version;
 	u32 dj_record_num;
 	u8  pre_cmd[PRE_CMD_SIZE + 1];
-	int dj_bias_pwm[DJ_NUM+1];
+	int dj_bias_pwm[DJ_NUM + 1];
 	u8 color_base_flag;
 	int color_red_base;
 	int color_grn_base;
@@ -44,9 +45,9 @@ extern u8 uart_receive_buf[UART_BUF_SIZE], uart1_get_ok, uart1_mode;
 extern eeprom_info_t eeprom_info;
 
 void tb_global_init(void);
-uint16_t str_contain_str(unsigned char *str, unsigned char *str2);
+uint16_t str_contain_str(unsigned char* str, unsigned char* str2);
 int abs_int(int int1);
-void selection_sort(int *a, int len);
+void selection_sort(int* a, int len);
 
 #endif
 

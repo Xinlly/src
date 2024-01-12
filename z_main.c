@@ -4,16 +4,16 @@
 	*	@所属	：	杭州众灵科技
 	*	@论坛	：	www.ZL-robot.com
 	*	@功能	：	ZL-KPZ51控制板
-	
+
 	实现的功能：
 	1、手柄按钮控制0-5号舵机，摇杆控制6-7号电机；
 	2、zide图形化控制舵机
 	3、可脱机存储控制
-	
+
 	传感器引脚:
-		循迹（S1-PA0 PA1） 
-		超声波(S3-PB0 PA2) 
-		声音(S4-PB1) 
+		循迹（S1-PA0 PA1）
+		超声波(S3-PB0 PA2)
+		声音(S4-PB1)
 		颜色识别(S6-PA7 PA5)
 	舵机引脚：
 		DJ0-PB3
@@ -26,19 +26,19 @@
 		BEEP-PB5
 	LED引脚：
 		NLED-PB13
-	PS2手柄引脚：	
+	PS2手柄引脚：
 	  PS1-DAT-PA15
 	  PS2-CMD-PA14
 	  PS6-ATT-PA13
 	  PS7-CLK-PA12
 	按键引脚：
 	  KEY1-PA8 KEY2-PA11
-	
+
 	统一总线口： TX3 RX3
-	
+
 	主频：72M
 	单片机型号：STM32F103C8T6
-	
+
 ***************************************************************/
 
 #include "z_rcc.h"		//配置时钟文件
@@ -71,9 +71,9 @@ u8 needSaveFlag = 0;		    //偏差保存标志
 u32 bias_systick_ms_bak = 0;//偏差保存标志时间
 u32 action_time = 0;
 
-u8 psx_buf[9]={0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; //存储手柄的数据 	
+u8 psx_buf[9] = { 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00 }; //存储手柄的数据 	
 
-const char *pre_cmd_set_red[PSX_BUTTON_NUM] = {//红灯模式下按键的配置			
+const char* pre_cmd_set_red[PSX_BUTTON_NUM] = {//红灯模式下按键的配置			
 	"<PS2_RED01:#005P0600T2000!^#005PDST!>",	//L2						  
 	"<PS2_RED02:#005P2400T2000!^#005PDST!>",	//R2						  
 	"<PS2_RED03:#004P0600T2000!^#004PDST!>",	//L1						  
@@ -92,7 +92,7 @@ const char *pre_cmd_set_red[PSX_BUTTON_NUM] = {//红灯模式下按键的配置
 	"<PS2_RED16:#000P2400T2000!^#000PDST!>",	//LL								
 };
 
-const char *pre_cmd_set_grn[PSX_BUTTON_NUM] = {//绿灯模式下按键的配置			
+const char* pre_cmd_set_grn[PSX_BUTTON_NUM] = {//绿灯模式下按键的配置			
 	"<PS2_RED01:$SMODE10!>",//L2						  
 	"<PS2_RED02:$SMODE10!>", //R2						  
 	"<PS2_RED03:$SMODE8!>",	 //L1						  
@@ -111,13 +111,12 @@ const char *pre_cmd_set_grn[PSX_BUTTON_NUM] = {//绿灯模式下按键的配置
 	"<PS2_RED16:$SMODE2!>",	 //LL								
 };
 
-
 /*-------------------------------------------------------------------------------------------------------
-*  程序从这里执行				
+*  程序从这里执行
 *  这个启动代码 完成时钟配置 使用外部晶振作为STM32的运行时钟 并倍频到72M
 -------------------------------------------------------------------------------------------------------*/
 
-int main(void) {	
+int main(void) {
 	setup_rcc();		//初始化时钟
 	setup_global();		//初始化全局变量
 	setup_gpio();		//初始化IO口
@@ -134,8 +133,8 @@ int main(void) {
 	setup_sensor();		//初始化传感器
 	setup_start();		//初始化启动信号
 	setup_interrupt();	//初始化总中断	
-	
-	while(1) {
+
+	while (1) {
 		loop_nled();		//循环执行工作指示灯，500ms跳动一次 和声音公用一个IO口 这里在声音功能启用的时候就关闭nled
 		loop_uart();		//串口数据接收处理
 		loop_action();		//动作组批量执行
@@ -143,7 +142,8 @@ int main(void) {
 		loop_ps2_button();	//处理手柄上的按钮
 		loop_ps2_car();		//处理小车电机摇杆控制
 		loop_monitor();   	//定时保存一些变量
-		AI_xunji_bizhang();				//循迹避障
+		//test();
+		runDemo();//AI_yanse_shibie();//AI_xunji_bizhang();				//循迹避障
 	}
 }
 
@@ -157,71 +157,71 @@ void setup_rcc(void) {   //初始化时钟
 }
 
 void setup_global(void) {//初始化全局变量
-	tb_global_init();	
+	tb_global_init();
 }
 
 void setup_gpio(void) {  //初始化IO口
-	tb_gpio_init();		    
+	tb_gpio_init();
 }
 
 void setup_nled(void) {  //初始化工作指示灯
-	nled_init();		
+	nled_init();
 	nled_off();		         //工作指示灯关闭
 }
 
 void setup_beep(void) {  //初始化定时器蜂鸣器
-	beep_init();		
+	beep_init();
 	beep_off();			       //关闭蜂鸣器
-}			
+}
 
 void setup_djio(void) {  //初始化舵机IO口
-	dj_io_init();		
-}	
+	dj_io_init();
+}
 
 void setup_w25q64(void) {//初始化存储器W25Q64
 	spiFlahsOn(1);
 	w25x_init();				   //动作组存储芯片初始化
-	w25x_read((u8 *)(&eeprom_info), W25Q64_INFO_ADDR_SAVE_STR, sizeof(eeprom_info));//读取全局变量
-	
-	if(eeprom_info.version != VERSION) {//判断版本是否是当前版本
+	w25x_read((u8*)(&eeprom_info), W25Q64_INFO_ADDR_SAVE_STR, sizeof(eeprom_info));//读取全局变量
+
+	if (eeprom_info.version != VERSION) {//判断版本是否是当前版本
 		eeprom_info.version = VERSION;		//复制当前版本
 		eeprom_info.dj_record_num = 0;		//学习动作组变量赋值0
 	}
-	
-	if(eeprom_info.dj_bias_pwm[DJ_NUM] != FLAG_VERIFY) {
-		for(i=0;i<DJ_NUM;i++) {
+
+	if (eeprom_info.dj_bias_pwm[DJ_NUM] != FLAG_VERIFY) {
+		for (i = 0;i < DJ_NUM;i++) {
 			eeprom_info.dj_bias_pwm[i] = 0;
 		}
 		eeprom_info.dj_bias_pwm[DJ_NUM] = FLAG_VERIFY;
 	}
-	
-	for(i=0;i<DJ_NUM;i++) {
+
+	for (i = 0;i < DJ_NUM;i++) {
 		duoji_doing[i].aim = 1500 + eeprom_info.dj_bias_pwm[i];
 		duoji_doing[i].cur = 1500 + eeprom_info.dj_bias_pwm[i];
 		duoji_doing[i].inc = 0;
 	}
 	spiFlahsOn(0);
-}	
+}
 
 void setup_adc(void) {//初始化ADC采集 使用DMA初始化
 	ADC_init();
 }
 
 void setup_ps2(void) {//初始化PS2手柄
-	PSX_init();	
+	PSX_init();
 }
 
 void setup_dj_timer(void) {//初始化定时器2 处理舵机PWM输出
-	TIM2_Int_Init(20000, 71);	
+	TIM2_Int_Init(20000, 71);
 }
 
 void setup_uart1(void) {
-  //串口1初始化
+	//串口1初始化
 	tb_usart1_init(115200);
 	//串口1打开
 	uart1_open();
 	//串口发送测试字符
-	uart1_send_str((u8 *)"uart1 check ok!");
+	uart1_send_str((u8*)"uart1 check ok!");
 }
 //初始化串口2
 void setup_uart2(void) {
@@ -230,8 +230,8 @@ void setup_uart2(void) {
 	//串口2打开
 	uart2_open();
 	//串口发送测试字符
-	uart2_send_str((u8 *)"uart2 check ok!");
-}	
+	uart2_send_str((u8*)"uart2 check ok!");
+}
 //初始化串口3
 void setup_uart3(void) {
 	//串口3初始化
@@ -239,43 +239,44 @@ void setup_uart3(void) {
 	//串口3打开
 	uart3_open();
 	//串口发送测试字符
-	uart3_send_str((u8 *)"uart3 check ok!");
+	uart3_send_str((u8*)"uart3 check ok!");
 	//总线输出 复位总线舵机 串口3即为总线串口
-	zx_uart_send_str((u8 *)"#255P1500T2000!");
-}	
+	zx_uart_send_str((u8*)"#255P1500T2000!");
+}
 //初始化滴答时钟，1S增加一次millis()的值
 void setup_systick(void) {
 	//系统滴答时钟初始化	
 	SysTick_Int_Init();
-}	
+}
 //初始化启动信号
 void setup_start(void) {
 	//蜂鸣器LED 名叫闪烁 示意系统启动
 	beep_on();nled_on();tb_delay_ms(100);beep_off();nled_off();tb_delay_ms(100);
 	beep_on();nled_on();tb_delay_ms(100);beep_off();nled_off();tb_delay_ms(100);
 	beep_on();nled_on();tb_delay_ms(100);beep_off();nled_off();tb_delay_ms(100);
-}	
+}
 //初始化其他
-void setup_others(void) {	
-	
+void setup_others(void) {
+
 	//将偏差带入初始值
-	for(i=0;i<DJ_NUM;i++) {
-		duoji_doing[i].aim = 1500+eeprom_info.dj_bias_pwm[i];
+	for (i = 0;i < DJ_NUM;i++) {
+		duoji_doing[i].aim = 1500 + eeprom_info.dj_bias_pwm[i];
 		duoji_doing[i].cur = duoji_doing[i].aim;
-		duoji_doing[i].inc = 0;		
+		duoji_doing[i].inc = 0;
 	}
-	
+
 	//执行预存命令 {G0000#000P1500T1000!#000P1500T1000!}
-	if(eeprom_info.pre_cmd[PRE_CMD_SIZE] == FLAG_VERIFY) {
-		strcpy((char *)uart_receive_buf, (char *)eeprom_info.pre_cmd);
-		if(eeprom_info.pre_cmd[0] == '$') {
+	if (eeprom_info.pre_cmd[PRE_CMD_SIZE] == FLAG_VERIFY) {
+		strcpy((char*)uart_receive_buf, (char*)eeprom_info.pre_cmd);
+		if (eeprom_info.pre_cmd[0] == '$') {
 			parse_cmd(eeprom_info.pre_cmd);
-		} else {
-			for(i=16;i<strlen((char *)uart_receive_buf);i+=15) {
+		}
+		else {
+			for (i = 16;i < strlen((char*)uart_receive_buf);i += 15) {
 				uart_receive_buf[i] = '0';
-				uart_receive_buf[i+1] = '0';
-				uart_receive_buf[i+2] = '0';
-				uart_receive_buf[i+3] = '0';
+				uart_receive_buf[i + 1] = '0';
+				uart_receive_buf[i + 2] = '0';
+				uart_receive_buf[i + 3] = '0';
 			}
 			parse_action(uart_receive_buf);
 		}
@@ -286,7 +287,7 @@ void setup_others(void) {
 void setup_interrupt(void) {
 	//总中断打开
 	tb_interrupt_open();
-}	
+}
 //--------------------------------------------------------------------------------
 
 
@@ -296,65 +297,70 @@ void setup_interrupt(void) {
 */
 //循环执行工作指示灯，500ms跳动一次
 void loop_nled(void) {
-	static u32 time_count=0;
+	static u32 time_count = 0;
 	static u8 flag = 0;
-	if(millis()-time_count > 1000)  {
+	if (millis() - time_count > 1000) {
 		time_count = millis();
-		if(flag) {
+		if (flag) {
 			nled_on();
-		} else {
+		}
+		else {
 			nled_off();
 		}
-		flag= ~flag;
+		flag = ~flag;
 	}
-}		
+}
 //串口数据接收处理
 void loop_uart(void) {
-	if(uart1_get_ok) {
-		if(uart1_mode == 1) {					    //命令模式
-			parse_cmd(uart_receive_buf);			
-		} else if(uart1_mode == 2) {			//单个舵机调试
+	if (uart1_get_ok) {
+		if (uart1_mode == 1) {					    //命令模式
+			parse_cmd(uart_receive_buf);
+		}
+		else if (uart1_mode == 2) {			//单个舵机调试
 			parse_action(uart_receive_buf);
-		} else if(uart1_mode == 3) {		  //多路舵机调试
+		}
+		else if (uart1_mode == 3) {		  //多路舵机调试
 			parse_action(uart_receive_buf);
-		} else if(uart1_mode == 4) {		  //存储模式
+		}
+		else if (uart1_mode == 4) {		  //存储模式
 			save_action(uart_receive_buf);
-		} 
+		}
 		uart1_mode = 0;
 		uart1_get_ok = 0;
 		uart1_open();
 	}
 	return;
-}	
+}
 
 //动作组批量执行
 void loop_action(void) {
 	//通过判断舵机是否全部执行完毕 并且是执行动作组group_do_ok尚未结束的情况下进入处理
 	static long long systick_ms_bak = 0;
-	if(group_do_ok == 0) {
-		if(millis() - systick_ms_bak > action_time) {
-			systick_ms_bak =  millis();
-			if(group_num_times != 0 && do_time == 0) {
-			  group_do_ok = 1;
-			  uart1_send_str((u8 *)"@GroupDone!");
-			  return;
+	if (group_do_ok == 0) {
+		if (millis() - systick_ms_bak > action_time) {
+			systick_ms_bak = millis();
+			if (group_num_times != 0 && do_time == 0) {
+				group_do_ok = 1;
+				uart1_send_str((u8*)"@GroupDone!");
+				return;
 			}
 			//调用do_start_index个动作
 			do_group_once(do_start_index);
-			
-			if(group_num_start<group_num_end) {
-				if(do_start_index == group_num_end) {
+
+			if (group_num_start < group_num_end) {
+				if (do_start_index == group_num_end) {
 					do_start_index = group_num_start;
-					if(group_num_times != 0) {
+					if (group_num_times != 0) {
 						do_time--;
 					}
 					return;
 				}
 				do_start_index++;
-			} else {
-				if(do_start_index == group_num_end) {
+			}
+			else {
+				if (do_start_index == group_num_end) {
 					do_start_index = group_num_start;
-					if(group_num_times != 0) {
+					if (group_num_times != 0) {
 						do_time--;
 					}
 					return;
@@ -362,8 +368,9 @@ void loop_action(void) {
 				do_start_index--;
 			}
 		}
-	} else {
-      action_time = 10;
+	}
+	else {
+		action_time = 10;
 	}
 }
 
@@ -371,81 +378,105 @@ void loop_action(void) {
 void loop_ps2_data(void) {
 	static u32 systick_ms_bak = 0;
 	//每20ms处理1次
-	if(millis() - systick_ms_bak < 50) {
+	if (millis() - systick_ms_bak < 50) {
 		return;
 	}
 	systick_ms_bak = millis();
 	//读写手柄数据
 	psx_write_read(psx_buf);
-	
+
 #if 0
 	//测试手柄数据，1为打开 0为关闭
-	sprintf((char *)cmd_return, "0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x\r\n", 
-	(int)psx_buf[0], (int)psx_buf[1], (int)psx_buf[2], (int)psx_buf[3],
-	(int)psx_buf[4], (int)psx_buf[5], (int)psx_buf[6], (int)psx_buf[7], (int)psx_buf[8]);
+	sprintf((char*)cmd_return, "0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x\r\n",
+		(int)psx_buf[0], (int)psx_buf[1], (int)psx_buf[2], (int)psx_buf[3],
+		(int)psx_buf[4], (int)psx_buf[5], (int)psx_buf[6], (int)psx_buf[7], (int)psx_buf[8]);
 	uart1_send_str(cmd_return);
 #endif 	
-	
+
 	return;
-}	
+}
 //处理手柄上的按钮
 void loop_ps2_button(void) {
-	static unsigned char psx_button_bak[2] = {0};
+	static unsigned char psx_button_bak[2] = { 0 };
 
 	//对比两次获取的按键值是否相同 ，相同就不处理，不相同则处理
-	if((psx_button_bak[0] == psx_buf[3])
-	&& (psx_button_bak[1] == psx_buf[4])) {				
-	} else {		
+	if ((psx_button_bak[0] == psx_buf[3])
+		&& (psx_button_bak[1] == psx_buf[4])) {
+	}
+	else {
 		//处理buf3和buf4两个字节，这两个字节存储这手柄16个按键的状态
-		parse_psx_buf(psx_buf+3, psx_buf[1]);
+		parse_psx_buf(psx_buf + 3, psx_buf[1]);
 		psx_button_bak[0] = psx_buf[3];
 		psx_button_bak[1] = psx_buf[4];
 	}
 	return;
-}	
+}
+
 //处理小车电机摇杆控制
 void loop_ps2_car(void) {
-	static int car_left, car_right, car_left_bak, car_right_bak;
-	
-	if(psx_buf[1] != PS2_LED_RED)return;
-	
-	if(abs_int(127 - psx_buf[8]) < 5 )psx_buf[8] = 127;
-	if(abs_int(127 - psx_buf[6]) < 5 )psx_buf[6] = 127;
-	
+	static int car_left_abs, car_left, car_right_abs, car_right, car_left_bak, car_right_bak;
+
+	if (psx_buf[1] != PS2_LED_RED)return;
+
 	car_left = (127 - psx_buf[8]) * 8;
 	car_right = (127 - psx_buf[6]) * 8;
-  if (car_left > 1000) {
-    car_left = 1000;
-  } else if (car_left < -1000) {
-    car_left = -1000;
-  } else if (car_right > 1000) {
-    car_right = 1000;
-  } else if (car_right < -1000) {
-    car_right = -1000;
-  }	
-	if(car_left != car_left_bak || car_right != car_right_bak) {
+
+	car_left_abs = abs_int(car_left);
+	car_right_abs = abs_int(car_right);
+
+	if (car_left > 600) {
+		car_left = 600;
+	}
+	else if (car_left < -600) {
+		car_left = -600;
+	}
+
+	if (car_right > 600) {
+		car_right = 600;
+	}
+	else if (car_right < -600) {
+		car_right = -600;
+	}
+
+	if (car_left_abs < 200) {
+		if (car_right > 0) car_left = 1;
+		else if (car_right < 0) car_left = -1;
+		else car_left = 0;
+	}
+
+	if (car_right_abs < 200) {
+		if (car_left > 0) car_right = 1;
+		else if (car_left < 0) car_right = -1;
+		else car_right = 0;
+	}
+
+
+
+	if (car_left != car_left_bak || car_right != car_right_bak) {
 		//uart1_send_str((u8*)"ps2:");
 		car_set(car_left, car_right);
 		car_left_bak = car_left;
 		car_right_bak = car_right;
 	}
 }
+
+
 //定时保存一些变量
 void loop_monitor(void) {
 	static u32 saveTime = 3000;
-	if((needSaveFlag == 1) || (millis() - bias_systick_ms_bak > saveTime)) {
+	if ((needSaveFlag == 1) || (millis() - bias_systick_ms_bak > saveTime)) {
 		needSaveFlag = 0;
 		bias_systick_ms_bak = millis();
 		rewrite_eeprom();
-	}	
+	}
 	return;
-}	
+}
 
 //--------------------------------------------------------------------------------
 
 //软件复位函数，调用后单片机自动复位
 void soft_reset(void) {
-	__set_FAULTMASK(1);     
+	__set_FAULTMASK(1);
 	NVIC_SystemReset();
 }
 
@@ -453,91 +484,149 @@ void soft_reset(void) {
 //参数 左轮速度和右轮速度 范围 -1000 到 1000
 void car_set(int car_left, int car_right) {
 	//总线马达设置	
-	sprintf((char *)cmd_return, "{#006P%04dT0000!#007P%04dT0000!}", (int)(1500+car_left), (int)(1500-car_right));
+	sprintf((char*)cmd_return, "{#006P%04dT0000!#007P%04dT0000!}", (int)(1500 + car_left + abs_int(car_left) * 0.3), (int)(1500 - car_right));
 	zx_uart_send_str(cmd_return);
 	return;
 }
 
-
 //处理手柄按键字符，buf为字符数组，mode是指模式 主要是红灯和绿灯模式
-void parse_psx_buf(unsigned char *buf, unsigned char mode) {
+void parse_psx_buf(unsigned char* buf, unsigned char mode) {
 	u8 i, pos = 0;
-	static u16 bak=0xffff, temp, temp2;
-	temp = (buf[0]<<8) + buf[1];
-	
-	if(bak != temp) {
+	static u16 bak = 0xffff, temp, temp2;
+	temp = (buf[0] << 8) + buf[1];
+
+	if (bak != temp) {
 		temp2 = temp;
 		temp &= bak;
-		for(i=0;i<16;i++) {     //16个按键一次轮询
-			if((1<<i) & temp) {
-			} else {
-				if((1<<i) & bak) {	//press 表示按键按下了
-															
-					memset(uart_receive_buf, 0, sizeof(uart_receive_buf));					
-					if(mode == PS2_LED_RED) {
-						memcpy((char *)uart_receive_buf, (char *)pre_cmd_set_red[i], strlen(pre_cmd_set_red[i]));
-					} else if(mode == PS2_LED_GRN) {
-						memcpy((char *)uart_receive_buf, (char *)pre_cmd_set_grn[i], strlen(pre_cmd_set_grn[i]));
-					} else continue;
+		for (i = 0;i < 16;i++) {     //16个按键一次轮询
+			if ((1 << i) & temp) {
+			}
+			else {
+				if ((1 << i) & bak) {	//press 表示按键按下了
+					switch (i) {
+						case 8:
+							car_set(0, 0);
+							if (flag_xunji) {
+								flag_xunji = 0;
+								beep_on_times(2, 100);
+							}
+							else {
+								flag_xunji = 1;
+								beep_on_times(3, 100);
+							}
+
+							break;
+
+						default:
+							break;
+					}
+					bak = 0xffff;
+				}
+				else {//release 表示按键松开了
+					switch (i) {
+						case 8:
+							// beep_on_times(2, 100);
+							break;
+
+						default:
+							break;
+					}
+				}
+			}
+		}
+		bak = temp2;
+		//beep_on();mdelay(10);beep_off();
+	}
+	return;
+}
+
+//处理手柄按键字符，buf为字符数组，mode是指模式 主要是红灯和绿灯模式
+void parse_psx_buf_bak(unsigned char* buf, unsigned char mode) {
+	u8 i, pos = 0;
+	static u16 bak = 0xffff, temp, temp2;
+	temp = (buf[0] << 8) + buf[1];
+
+	if (bak != temp) {
+		temp2 = temp;
+		temp &= bak;
+		for (i = 0;i < 16;i++) {     //16个按键一次轮询
+			if ((1 << i) & temp) {
+			}
+			else {
+				if ((1 << i) & bak) {	//press 表示按键按下了
+
+					memset(uart_receive_buf, 0, sizeof(uart_receive_buf));
+					if (mode == PS2_LED_RED) {
+						memcpy((char*)uart_receive_buf, (char*)pre_cmd_set_red[i], strlen(pre_cmd_set_red[i]));
+					}
+					else if (mode == PS2_LED_GRN) {
+						memcpy((char*)uart_receive_buf, (char*)pre_cmd_set_grn[i], strlen(pre_cmd_set_grn[i]));
+					}
+					else continue;
 					//zx_uart_send_str(uart_receive_buf);
-					pos = str_contain_str(uart_receive_buf, (u8 *)"^");
-					if(pos) uart_receive_buf[pos-1] = '\0';
-					if(str_contain_str(uart_receive_buf, (u8 *)"$")) {
+					pos = str_contain_str(uart_receive_buf, (u8*)"^");
+					if (pos) uart_receive_buf[pos - 1] = '\0';
+					if (str_contain_str(uart_receive_buf, (u8*)"$")) {
 						uart1_close();
 						uart1_get_ok = 0;
-						strcpy((char *)cmd_return, (char *)uart_receive_buf+11);
-						strcpy((char *)uart_receive_buf, (char *)cmd_return);
+						strcpy((char*)cmd_return, (char*)uart_receive_buf + 11);
+						strcpy((char*)uart_receive_buf, (char*)cmd_return);
 						uart1_get_ok = 1;
 						uart1_open();
 						uart1_mode = 1;
-					} else if(str_contain_str(uart_receive_buf, (u8 *)"#")) {
+					}
+					else if (str_contain_str(uart_receive_buf, (u8*)"#")) {
 						uart1_close();
 						uart1_get_ok = 0;
-						strcpy((char *)cmd_return, (char *)uart_receive_buf+11);
-						strcpy((char *)uart_receive_buf,(char *) cmd_return);
+						strcpy((char*)cmd_return, (char*)uart_receive_buf + 11);
+						strcpy((char*)uart_receive_buf, (char*)cmd_return);
 						uart1_get_ok = 1;
 						uart1_open();
 						uart1_mode = 2;
 					}
 					bak = 0xffff;
-				} else {//release 表示按键松开了
-										
-					memset(uart_receive_buf, 0, sizeof(uart_receive_buf));					
-					if(mode == PS2_LED_RED) {
-						memcpy((char *)uart_receive_buf, (char *)pre_cmd_set_red[i], strlen(pre_cmd_set_red[i]));
-					} else if(mode == PS2_LED_GRN) {
-						memcpy((char *)uart_receive_buf, (char *)pre_cmd_set_grn[i], strlen(pre_cmd_set_grn[i]));
-					} else continue;	
-					
-					pos = str_contain_str(uart_receive_buf, (u8 *)"^");
-					if(pos) {
-						if(str_contain_str(uart_receive_buf+pos, (u8 *)"$")) {
+				}
+				else {//release 表示按键松开了
+
+					memset(uart_receive_buf, 0, sizeof(uart_receive_buf));
+					if (mode == PS2_LED_RED) {
+						memcpy((char*)uart_receive_buf, (char*)pre_cmd_set_red[i], strlen(pre_cmd_set_red[i]));
+					}
+					else if (mode == PS2_LED_GRN) {
+						memcpy((char*)uart_receive_buf, (char*)pre_cmd_set_grn[i], strlen(pre_cmd_set_grn[i]));
+					}
+					else continue;
+
+					pos = str_contain_str(uart_receive_buf, (u8*)"^");
+					if (pos) {
+						if (str_contain_str(uart_receive_buf + pos, (u8*)"$")) {
 							//uart1_close();
 							//uart1_get_ok = 0;
-							strcpy((char *)cmd_return, (char *)uart_receive_buf+pos);
-							cmd_return[strlen((char *)cmd_return) - 1] = '\0';
-							strcpy((char *)uart_receive_buf, (char *)cmd_return);
+							strcpy((char*)cmd_return, (char*)uart_receive_buf + pos);
+							cmd_return[strlen((char*)cmd_return) - 1] = '\0';
+							strcpy((char*)uart_receive_buf, (char*)cmd_return);
 							parse_cmd(uart_receive_buf);
 							//uart1_get_ok = 1;
 							//uart1_mode = 1;
-						} else if(str_contain_str(uart_receive_buf+pos, (u8 *)"#")) {
+						}
+						else if (str_contain_str(uart_receive_buf + pos, (u8*)"#")) {
 							//uart1_close();
 							//uart1_get_ok = 0;
-							strcpy((char *)cmd_return, (char *)uart_receive_buf+pos);
-							cmd_return[strlen((char *)cmd_return) - 1] = '\0';
-							strcpy((char *)uart_receive_buf, (char *)cmd_return);
+							strcpy((char*)cmd_return, (char*)uart_receive_buf + pos);
+							cmd_return[strlen((char*)cmd_return) - 1] = '\0';
+							strcpy((char*)uart_receive_buf, (char*)cmd_return);
 							parse_action(uart_receive_buf);
 							//uart1_get_ok = 1;
 							//uart1_mode = 2;
 						}
 						//uart1_send_str(uart_receive_buf);
-					}	
+					}
 				}
 			}
 		}
 		bak = temp2;
 		beep_on();mdelay(10);beep_off();
-	}	
+	}
 	return;
 }
 
@@ -554,154 +643,170 @@ void parse_psx_buf(unsigned char *buf, unsigned char mode) {
 	获取智能信号：        $SMODE1!
 */
 //命令解析函数
-void parse_cmd(u8 *cmd) {
+void parse_cmd(u8* cmd) {
 	int pos, i, index, int1, int2;
 	//uart1_send_str(cmd);
 
-	if(pos = str_contain_str(cmd, (u8 *)"$DRS!"), pos) {
-		uart1_send_str((u8 *)"hello word!");
-	} else if(pos = str_contain_str(cmd, (u8 *)"$DST!"), pos) {
-		group_do_ok  = 1;
-		for(i=0;i<DJ_NUM;i++) {
-			duoji_doing[i].inc = 0;	
+	if (pos = str_contain_str(cmd, (u8*)"$DRS!"), pos) {
+		uart1_send_str((u8*)"hello word!");
+	}
+	else if (pos = str_contain_str(cmd, (u8*)"$DST!"), pos) {
+		group_do_ok = 1;
+		for (i = 0;i < DJ_NUM;i++) {
+			duoji_doing[i].inc = 0;
 			duoji_doing[i].aim = duoji_doing[i].cur;
 		}
-		zx_uart_send_str((u8 *)"#255PDST!");//总线停止
-		car_set(0,0);	//车停
+		zx_uart_send_str((u8*)"#255PDST!");//总线停止
+		car_set(0, 0);	//车停
 		AI_mode = 255;
-	} else if(pos = str_contain_str(cmd, (u8 *)"$DST:"), pos) {
-		if(sscanf((char *)cmd, "$DST:%d!", &index)) {
-			duoji_doing[index].inc = 0;	
+	}
+	else if (pos = str_contain_str(cmd, (u8*)"$DST:"), pos) {
+		if (sscanf((char*)cmd, "$DST:%d!", &index)) {
+			duoji_doing[index].inc = 0;
 			duoji_doing[index].aim = duoji_doing[index].cur;
-			sprintf((char *)cmd_return, "#%03dPDST!\r\n", (int)index);
+			sprintf((char*)cmd_return, "#%03dPDST!\r\n", (int)index);
 			zx_uart_send_str(cmd_return);
 			memset(cmd_return, 0, sizeof(cmd_return));
 		}
-	} else if(pos = str_contain_str(cmd, (u8 *)"$RST!"), pos) {		
+	}
+	else if (pos = str_contain_str(cmd, (u8*)"$RST!"), pos) {
 		soft_reset();
-	} else if(pos = str_contain_str(cmd, (u8 *)"$PTG:"), pos) {		
-		if(sscanf((char *)cmd, "$PTG:%d-%d!", &int1, &int2)) {
+	}
+	else if (pos = str_contain_str(cmd, (u8*)"$PTG:"), pos) {
+		if (sscanf((char*)cmd, "$PTG:%d-%d!", &int1, &int2)) {
 			print_group(int1, int2);
 		}
-	} else if(pos = str_contain_str(cmd, (u8 *)"$DGS:"), pos) {		
-		if(sscanf((char *)cmd, "$DGS:%d!", &int1)) {
+	}
+	else if (pos = str_contain_str(cmd, (u8*)"$DGS:"), pos) {
+		if (sscanf((char*)cmd, "$DGS:%d!", &int1)) {
 			group_do_ok = 1;
 			do_group_once(int1);
 		}
-	} else if(pos = str_contain_str(cmd, (u8 *)"$DGT:"), pos) {		
-		if(sscanf((char *)cmd, "$DGT:%d-%d,%d!", &group_num_start, &group_num_end, &group_num_times)) {		
-			if(group_num_start != group_num_end) {
+	}
+	else if (pos = str_contain_str(cmd, (u8*)"$DGT:"), pos) {
+		if (sscanf((char*)cmd, "$DGT:%d-%d,%d!", &group_num_start, &group_num_end, &group_num_times)) {
+			if (group_num_start != group_num_end) {
 				do_start_index = group_num_start;
 				do_time = group_num_times;
 				group_do_ok = 0;
-			} else {
+			}
+			else {
 				do_group_once(group_num_start);
 			}
 		}
-	} else if(pos = str_contain_str(cmd, (u8 *)"$DCR:"), pos) {		
-		if(sscanf((char *)cmd, "$DCR:%d,%d!", &int1, &int2)) {
-			car_set(int1, int2);			
+	}
+	else if (pos = str_contain_str(cmd, (u8*)"$DCR:"), pos) {
+		if (sscanf((char*)cmd, "$DCR:%d,%d!", &int1, &int2)) {
+			car_set(int1, int2);
 		}
-	} else if(pos = str_contain_str(cmd, (u8 *)"$DJR!"), pos) {	
-		zx_uart_send_str((u8 *)"#255P1500T2000!\r\n");
-		for(i=0;i<DJ_NUM;i++) {
-			duoji_doing[i].aim = 1500+eeprom_info.dj_bias_pwm[i];
+	}
+	else if (pos = str_contain_str(cmd, (u8*)"$DJR!"), pos) {
+		zx_uart_send_str((u8*)"#255P1500T2000!\r\n");
+		for (i = 0;i < DJ_NUM;i++) {
+			duoji_doing[i].aim = 1500 + eeprom_info.dj_bias_pwm[i];
 			duoji_doing[i].time = 2000;
-			duoji_doing[i].inc = (duoji_doing[i].aim -  duoji_doing[i].cur) / (duoji_doing[i].time/20.000);
-		}		
-	} else if(pos = str_contain_str(cmd, (u8 *)"$CAR_STOP!"), pos) {	
-		car_set(0,0);	//车停
-	} else if(pos = str_contain_str(cmd, (u8 *)"$GETA!"), pos) {		
-		uart1_send_str((u8 *)"AAA");
-	} else if (pos = str_contain_str(cmd, (u8*)"$SMODE"), pos) {
-		if(sscanf((char *)uart_receive_buf, "$SMODE%d!", &int1)) {
-			AI_mode = int1;
-			uart1_send_str((u8 *)"@OK!");
-			beep_on_times(1,100);
+			duoji_doing[i].inc = (duoji_doing[i].aim - duoji_doing[i].cur) / (duoji_doing[i].time / 20.000);
 		}
-	} else if(pos = str_contain_str(cmd, (u8 *)"$SMART_STOP!"), pos) {		
+	}
+	else if (pos = str_contain_str(cmd, (u8*)"$CAR_STOP!"), pos) {
+		car_set(0, 0);	//车停
+	}
+	else if (pos = str_contain_str(cmd, (u8*)"$GETA!"), pos) {
+		uart1_send_str((u8*)"AAA");
+	}
+	else if (pos = str_contain_str(cmd, (u8*)"$SMODE"), pos) {
+		if (sscanf((char*)uart_receive_buf, "$SMODE%d!", &int1)) {
+			AI_mode = int1;
+			uart1_send_str((u8*)"@OK!");
+			beep_on_times(1, 100);
+		}
+	}
+	else if (pos = str_contain_str(cmd, (u8*)"$SMART_STOP!"), pos) {
 		AI_mode = 255;
 		mdelay(10);
-		parse_action((u8 *)"#255PDST!");
+		parse_action((u8*)"#255PDST!");
 		mdelay(10);
-		uart1_send_str((u8 *)"#006P1500T0000!#007P1500T0000!");
+		uart1_send_str((u8*)"#006P1500T0000!#007P1500T0000!");
 		mdelay(10);
-		uart1_send_str((u8 *)"@OK!");
+		uart1_send_str((u8*)"@OK!");
 		mdelay(10);
-		beep_on_times(1,100);
-	} 
+		beep_on_times(1, 100);
+	}
 }
 
 
 //动作组保存函数
 //只有用<>包含的字符串才能在此函数中进行解析
-void save_action(u8 *str) {
+void save_action(u8* str) {
 	s32 action_index = 0;
 	//预存命令处理
 	spiFlahsOn(1);
-	
-	if(str[1] == '$' && str[2] == '!') {
+
+	if (str[1] == '$' && str[2] == '!') {
 		eeprom_info.pre_cmd[PRE_CMD_SIZE] = 0;
 		rewrite_eeprom();
-		uart1_send_str((u8 *)"@CLEAR PRE_CMD OK!");
+		uart1_send_str((u8*)"@CLEAR PRE_CMD OK!");
 		return;
-	} else if(str[1] == '$') {
-		if(sscanf((char *)str, "<$DGT:%d-%d,%d!>", &group_num_start, &group_num_end, &group_num_times)) {
-			if(group_num_start == group_num_end) {
-				w25x_read(eeprom_info.pre_cmd, group_num_start*ACTION_SIZE, ACTION_SIZE);	
-			} else {
+	}
+	else if (str[1] == '$') {
+		if (sscanf((char*)str, "<$DGT:%d-%d,%d!>", &group_num_start, &group_num_end, &group_num_times)) {
+			if (group_num_start == group_num_end) {
+				w25x_read(eeprom_info.pre_cmd, group_num_start * ACTION_SIZE, ACTION_SIZE);
+			}
+			else {
 				memset(eeprom_info.pre_cmd, 0, sizeof(eeprom_info.pre_cmd));
-				strcpy((char *)eeprom_info.pre_cmd, (char *)str+1);
-				eeprom_info.pre_cmd[strlen((char *)str) - 2] = '\0';
+				strcpy((char*)eeprom_info.pre_cmd, (char*)str + 1);
+				eeprom_info.pre_cmd[strlen((char*)str) - 2] = '\0';
 			}
 			eeprom_info.pre_cmd[PRE_CMD_SIZE] = FLAG_VERIFY;
 			rewrite_eeprom();
 			//uart1_send_str(eeprom_info.pre_cmd);
-			uart1_send_str((u8 *)"@SET PRE_CMD OK!");
+			uart1_send_str((u8*)"@SET PRE_CMD OK!");
 		}
 		return;
 	}
 	//获取动作的组号如果不正确，或是第6个字符不是#则认为字符串错误
 	action_index = get_action_index(str);
-	
+
 	//<G0000#000P1500T1000!>
-	if((action_index == -1) || str[6] != '#'){
-		uart1_send_str((u8 *)"E");
+	if ((action_index == -1) || str[6] != '#') {
+		uart1_send_str((u8*)"E");
 		return;
 	}
 	//把尖括号替换成大括号直接存储到存储芯片里面去，则在执行动作组的时候直接拿出来解析就可以了
 	replace_char(str, '<', '{');
 	replace_char(str, '>', '}');
-	
-	if((action_index*ACTION_SIZE % 4096) == 0){w25x_erase_sector(action_index*ACTION_SIZE/4096);}
-	
-	w25x_write(str, action_index*ACTION_SIZE, strlen((char *)str)+1);
 
-//	memset(str, 0, sizeof((char *)str));
-//	w25x_read(str, action_index*ACTION_SIZE, ACTION_SIZE);
-//	uart1_send_str(str);
-	
-	//反馈一个A告诉上位机我已经接收到了
-	uart1_send_str((u8 *)"A");
-	uart3_send_str((u8 *)"A");
-	
-	spiFlahsOn(0);	
-	return;	
+	if ((action_index * ACTION_SIZE % 4096) == 0) { w25x_erase_sector(action_index * ACTION_SIZE / 4096); }
+
+	w25x_write(str, action_index * ACTION_SIZE, strlen((char*)str) + 1);
+
+	//	memset(str, 0, sizeof((char *)str));
+	//	w25x_read(str, action_index*ACTION_SIZE, ACTION_SIZE);
+	//	uart1_send_str(str);
+
+		//反馈一个A告诉上位机我已经接收到了
+	uart1_send_str((u8*)"A");
+	uart3_send_str((u8*)"A");
+
+	spiFlahsOn(0);
+	return;
 }
 
 //获取动作组的组号，字符串中有组号返回组号，否则返回-1
-int get_action_index(u8 *str) {
+int get_action_index(u8* str) {
 	u16 index = 0;
 	//uart_send_str(str);
-	while(*str) {
-		if(*str == 'G') {
+	while (*str) {
+		if (*str == 'G') {
 			str++;
-			while((*str != '#') && (*str != '$')) {
-				index = index*10 + *str-'0';
-				str++;	
+			while ((*str != '#') && (*str != '$')) {
+				index = index * 10 + *str - '0';
+				str++;
 			}
 			return index;
-		} else {
+		}
+		else {
 			str++;
 		}
 	}
@@ -712,26 +817,26 @@ int get_action_index(u8 *str) {
 //打印存储在芯片里的动作组，从串口1中发送出来 $CGP:x-y!这个命令调用
 void print_group(int start, int end) {
 	spiFlahsOn(1);
-	
-	if(start > end) {
+
+	if (start > end) {
 		int_exchange(&start, &end);
 	}
-	
-	for(;start<=end;start++) {
+
+	for (;start <= end;start++) {
 		memset(uart_receive_buf, 0, sizeof(uart_receive_buf));
-		w25x_read(uart_receive_buf, start*ACTION_SIZE, ACTION_SIZE);
+		w25x_read(uart_receive_buf, start * ACTION_SIZE, ACTION_SIZE);
 		uart1_send_str(uart_receive_buf);
-		uart1_send_str((u8 *)"\r\n");
-		
+		uart1_send_str((u8*)"\r\n");
+
 		uart3_send_str(uart_receive_buf);
-		uart3_send_str((u8 *)"\r\n");
+		uart3_send_str((u8*)"\r\n");
 	}
-	
+
 	spiFlahsOn(0);
 }
 
 //两个int变量交换
-void int_exchange(int *int1, int *int2) {
+void int_exchange(int* int1, int* int2) {
 	int int_temp;
 	int_temp = *int1;
 	*int1 = *int2;
@@ -739,18 +844,18 @@ void int_exchange(int *int1, int *int2) {
 }
 
 //获取最大时间
-int getMaxTime(u8 *str) {
-   int i = 0, max_time = 0, tmp_time = 0;
-   while(str[i]) {
-      if(str[i] == 'T') {
-          tmp_time = (str[i+1]-'0')*1000 + (str[i+2]-'0')*100 + (str[i+3]-'0')*10 + (str[i+4]-'0');
-          if(tmp_time>max_time)max_time = tmp_time;
-          i = i+4;
-          continue;
-      }
-      i++;
-   }
-   return max_time;
+int getMaxTime(u8* str) {
+	int i = 0, max_time = 0, tmp_time = 0;
+	while (str[i]) {
+		if (str[i] == 'T') {
+			tmp_time = (str[i + 1] - '0') * 1000 + (str[i + 2] - '0') * 100 + (str[i + 3] - '0') * 10 + (str[i + 4] - '0');
+			if (tmp_time > max_time)max_time = tmp_time;
+			i = i + 4;
+			continue;
+		}
+		i++;
+	}
+	return max_time;
 }
 
 //执行动作组1次
@@ -759,41 +864,43 @@ void do_group_once(int group_num) {
 	spiFlahsOn(1);
 	memset(uart_receive_buf, 0, sizeof(uart_receive_buf));
 	//从存储芯片中读取第group_num个动作组
-	w25x_read(uart_receive_buf, group_num*ACTION_SIZE, ACTION_SIZE-1);	
+	w25x_read(uart_receive_buf, group_num * ACTION_SIZE, ACTION_SIZE - 1);
 	//获取最大的组时间
 	action_time = getMaxTime(uart_receive_buf);
-	
+
 	//把读取出来的动作组传递到parse_action执行
 	parse_action(uart_receive_buf);
 	spiFlahsOn(0);
-	
+
 }
 
 
 //处理 #000P1500T1000! 类似的字符串
-void parse_action(u8 *uart_receive_buf) {
-	u16 index,  time, i = 0;
+void parse_action(u8* uart_receive_buf) {
+	u16 index, time, i = 0;
 	int bias;
 	float pwm;
 	float aim_temp;
 	zx_uart_send_str(uart_receive_buf);
-	
-	if(uart_receive_buf[0] == '#' && uart_receive_buf[4] == 'P' && uart_receive_buf[5] == 'S' && uart_receive_buf[6] == 'C' && uart_receive_buf[7] == 'K' && uart_receive_buf[12] == '!') {
-		index = (uart_receive_buf[1] - '0')*100 + (uart_receive_buf[2] - '0')*10 + (uart_receive_buf[3] - '0');
-		bias = (uart_receive_buf[9] - '0')*100 + (uart_receive_buf[10] - '0')*10 + (uart_receive_buf[11] - '0');
-		if((bias >= -500) && (bias <= 500) && (index < DJ_NUM)) {
-			if(uart_receive_buf[8] == '+') {
-			} else if(uart_receive_buf[8] == '-') {
+
+	if (uart_receive_buf[0] == '#' && uart_receive_buf[4] == 'P' && uart_receive_buf[5] == 'S' && uart_receive_buf[6] == 'C' && uart_receive_buf[7] == 'K' && uart_receive_buf[12] == '!') {
+		index = (uart_receive_buf[1] - '0') * 100 + (uart_receive_buf[2] - '0') * 10 + (uart_receive_buf[3] - '0');
+		bias = (uart_receive_buf[9] - '0') * 100 + (uart_receive_buf[10] - '0') * 10 + (uart_receive_buf[11] - '0');
+		if ((bias >= -500) && (bias <= 500) && (index < DJ_NUM)) {
+			if (uart_receive_buf[8] == '+') {
+			}
+			else if (uart_receive_buf[8] == '-') {
 				bias = -bias;
 			}
 			aim_temp = duoji_doing[index].cur + 0.043198 - eeprom_info.dj_bias_pwm[index] + bias;
-			eeprom_info.dj_bias_pwm[index] = bias;			
-			if(aim_temp > 2497){
+			eeprom_info.dj_bias_pwm[index] = bias;
+			if (aim_temp > 2497) {
 				aim_temp = 2497;
-			} else if(aim_temp < 500) {
+			}
+			else if (aim_temp < 500) {
 				aim_temp = 500;
 			}
-			
+
 			duoji_doing[index].aim = aim_temp;
 			duoji_doing[index].cur = aim_temp;
 			duoji_doing[index].inc = 0;
@@ -801,76 +908,81 @@ void parse_action(u8 *uart_receive_buf) {
 			needSaveFlag = 1;
 		}
 		return;
-	} else if(uart_receive_buf[0] == '#' && uart_receive_buf[4] == 'P' && uart_receive_buf[5] == 'D' && uart_receive_buf[6] == 'S' && uart_receive_buf[7] == 'T' && uart_receive_buf[8] == '!') {
-		index = (uart_receive_buf[1] - '0')*100 + (uart_receive_buf[2] - '0')*10 + (uart_receive_buf[3] - '0');		
-		if(index < DJ_NUM) {
-			duoji_doing[index].inc = 0;	
+	}
+	else if (uart_receive_buf[0] == '#' && uart_receive_buf[4] == 'P' && uart_receive_buf[5] == 'D' && uart_receive_buf[6] == 'S' && uart_receive_buf[7] == 'T' && uart_receive_buf[8] == '!') {
+		index = (uart_receive_buf[1] - '0') * 100 + (uart_receive_buf[2] - '0') * 10 + (uart_receive_buf[3] - '0');
+		if (index < DJ_NUM) {
+			duoji_doing[index].inc = 0;
 			duoji_doing[index].aim = duoji_doing[index].cur;
 		}
 		return;
 	}
-	
-	while(uart_receive_buf[i]) {
-		if(uart_receive_buf[i] == '#') {
+
+	while (uart_receive_buf[i]) {
+		if (uart_receive_buf[i] == '#') {
 			index = 0;i++;
-			while(uart_receive_buf[i] && uart_receive_buf[i] != 'P') {
-				index = index*10 + uart_receive_buf[i]-'0';i++;
+			while (uart_receive_buf[i] && uart_receive_buf[i] != 'P') {
+				index = index * 10 + uart_receive_buf[i] - '0';i++;
 			}
-		} else if(uart_receive_buf[i] == 'P') {
+		}
+		else if (uart_receive_buf[i] == 'P') {
 			pwm = 0;i++;
-			while(uart_receive_buf[i] && uart_receive_buf[i] != 'T') {
-				pwm = pwm*10 + uart_receive_buf[i]-'0';i++;
+			while (uart_receive_buf[i] && uart_receive_buf[i] != 'T') {
+				pwm = pwm * 10 + uart_receive_buf[i] - '0';i++;
 			}
-		} else if(uart_receive_buf[i] == 'T') {
+		}
+		else if (uart_receive_buf[i] == 'T') {
 			time = 0;i++;
-			while(uart_receive_buf[i] && uart_receive_buf[i] != '!') {
-				time = time*10 + uart_receive_buf[i]-'0';i++;
+			while (uart_receive_buf[i] && uart_receive_buf[i] != '!') {
+				time = time * 10 + uart_receive_buf[i] - '0';i++;
 			}
-			
-			if(index < DJ_NUM && (pwm<=2500)&& (pwm>=500) && (time<=10000)) {
+
+			if (index < DJ_NUM && (pwm <= 2500) && (pwm >= 500) && (time <= 10000)) {
 				//duoji_doing[index].inc = 0;
 //				if(duoji_doing[index].cur == pwm) {
 //					duoji_doing[index].cur -= 0.135;
 //				}
 				pwm += eeprom_info.dj_bias_pwm[index];
-				
-				if(pwm>2497)pwm=2497;
-				if(pwm<500)pwm=500;
-				
-				if(time < 20) {
+
+				if (pwm > 2497)pwm = 2497;
+				if (pwm < 500)pwm = 500;
+
+				if (time < 20) {
 					duoji_doing[index].aim = pwm;
 					duoji_doing[index].cur = pwm;
 					duoji_doing[index].inc = 0;
-				} else {
+				}
+				else {
 					duoji_doing[index].aim = pwm;
 					duoji_doing[index].time = time;
-					duoji_doing[index].inc = (duoji_doing[index].aim -  duoji_doing[index].cur) / (duoji_doing[index].time/20.000);
+					duoji_doing[index].inc = (duoji_doing[index].aim - duoji_doing[index].cur) / (duoji_doing[index].time / 20.000);
 				}
 
 				//sprintf(cmd_return, "#%03dP%04dT%04d! %f \r\n", index, pwm, time, duoji_doing[index].inc);
 				//uart1_send_str(cmd_return);
-			} 
-			
-			if(index == 255) {
-				for(index=0;index<DJ_NUM;index++) {
-					pwm =1500 + eeprom_info.dj_bias_pwm[index];
+			}
+
+			if (index == 255) {
+				for (index = 0;index < DJ_NUM;index++) {
+					pwm = 1500 + eeprom_info.dj_bias_pwm[index];
 					duoji_doing[index].aim = pwm;
 					duoji_doing[index].time = time;
-					duoji_doing[index].inc = (duoji_doing[index].aim -  duoji_doing[index].cur) / (duoji_doing[index].time/20.000);
+					duoji_doing[index].inc = (duoji_doing[index].aim - duoji_doing[index].cur) / (duoji_doing[index].time / 20.000);
 				}
 			}
-		} else {
+		}
+		else {
 			i++;
 		}
-	}	
+	}
 }
 
 //字符串中的字符替代函数 把str字符串中所有的ch1换成ch2
-void replace_char(u8*str, u8 ch1, u8 ch2) {
-	while(*str) {
-		if(*str == ch1) {
+void replace_char(u8* str, u8 ch1, u8 ch2) {
+	while (*str) {
+		if (*str == ch1) {
 			*str = ch2;
-		} 
+		}
 		str++;
 	}
 	return;
@@ -879,7 +991,7 @@ void replace_char(u8*str, u8 ch1, u8 ch2) {
 //把eeprom_info写入到W25Q64_INFO_ADDR_SAVE_STR位置
 void rewrite_eeprom(void) {
 	spiFlahsOn(1);
-	w25x_write((u8 *)(&eeprom_info), W25Q64_INFO_ADDR_SAVE_STR, sizeof(eeprom_info));
+	w25x_write((u8*)(&eeprom_info), W25Q64_INFO_ADDR_SAVE_STR, sizeof(eeprom_info));
 	spiFlahsOn(0);
 }
 

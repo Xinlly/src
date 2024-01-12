@@ -8,6 +8,7 @@ u8 uart_receive_buf[UART_BUF_SIZE], uart1_get_ok, uart1_mode;
 eeprom_info_t eeprom_info;
 u8 AI_mode = 255;
 u8 group_do_ok = 1;
+u8 flag_xunji = 0;
 
 
 void tb_global_init(void) {

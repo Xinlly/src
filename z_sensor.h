@@ -10,6 +10,22 @@
 #define xj0() GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_1)
 #define xj1() GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0)
 
+//红外状态
+#define hwStatus - xj0() - 2 * xj1() + 2
+#define hwStatus_white -1
+#define hwStatus_leftBlack 0
+#define hwStatus_rightBlack 1
+#define hwStatus_black 2
+
+//小车动作
+#define carAcr_leftR 0
+#define carAcr_left 1
+#define carAcr_for 2
+#define carAcr_right 3
+#define carAcr_rightR 4
+#define carAcr_aft 5
+#define carAcr_stop 6
+
 #define Trig(x) gpioB_pin_set(0, x);
 #define Echo() GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_2)
 
@@ -50,7 +66,7 @@
 #define IR_7 				0x42
 #define IR_8 				0x4a
 #define IR_9 				0x52
-extern u8 ir_data[4],ir_flag;
+extern u8 ir_data[4], ir_flag;
 
 //红外遥控器定义
 void setup_ir(void);
@@ -70,6 +86,9 @@ void AI_gensui_moshi(void);			//超声波跟随功能
 void AI_ziyou_bizhang(void);		//超声波自由避障
 void AI_xunji_dingju(void);			//循迹超声波夹取
 void AI_shengkong_xunji(void);		//声控循迹
+void test(void);
+void runDemo(void);
+
 
 #endif
 
